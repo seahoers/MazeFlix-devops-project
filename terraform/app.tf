@@ -7,7 +7,8 @@ resource "docker_container" "app1" {
   image = docker_image.app.image_id
 
   networks_advanced {
-    name = docker_network.lab.name
+    name    = docker_network.lab.name
+    aliases = ["app-1"]
   }
 }
 
@@ -16,6 +17,7 @@ resource "docker_container" "app2" {
   image = docker_image.app.image_id
 
   networks_advanced {
-    name = docker_network.lab.name
+    name    = docker_network.lab.name
+    aliases = ["app-2"]
   }
 }
