@@ -26,3 +26,20 @@ run "infrastructure" {
     error_message = "NGINX container was not created correctly."
   }
 }
+
+run "nginx_is_reachable" {
+  command = plan
+
+  module {
+    source = "./tests/http_check"
+  }
+
+  variables {
+    endpoint = run.infrastructure.nginx_url
+  }
+
+  assert {
+    condition     = data.http.nginx.status_code == 200
+    error_message = "NGINX did not respond with HTTP 200."
+  }
+}
