@@ -16,7 +16,7 @@ env:
 
 jobs:
   verify:
-    name: CI Verification
+    name: Verifications
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
