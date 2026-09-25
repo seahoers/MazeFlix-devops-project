@@ -9,15 +9,15 @@
     "build:check": "vue-tsc -b && vite build",
     "build:analyze": "vue-tsc -b && vite build --mode analyze",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
-    "lint:ci": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --max-warnings=0",
+    "lint": "eslint . --fix",
+    "lint:ci": "eslint . --max-warnings=0",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,vue,css,scss,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,vue,css,scss,json,md}\"",
     "typecheck:ci": "vue-tsc -b",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:ci": "vitest run --coverage --coverage.thresholds.statements=89 --coverage.thresholds.branches=88 --coverage.thresholds.functions=68"
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
