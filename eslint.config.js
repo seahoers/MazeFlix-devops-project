@@ -16,7 +16,7 @@ export default typescriptEslint.config(
     plugins: {
       prettier: eslintPluginPrettier,
     },
-    files: ['**/*.{ts,vue}'],
+    files: ['**/*.{vue,js,jsx,cjs,mjs,ts,tsx,cts,mts}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -27,15 +27,18 @@ export default typescriptEslint.config(
     },
     rules: {
       semi: ['warn', 'always'],
-      '@typescript-eslint/no-unused-vars': ['error', { 
-        'argsIgnorePattern': '^_',
-        'varsIgnorePattern': '^_' 
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
       'prettier/prettier': 'warn',
       'vue/attributes-order': 'off',
       'vue/multi-word-component-names': 'off',
       'vue/no-v-html': 'off',
     },
   },
-  eslintConfigPrettier
+  eslintConfigPrettier,
 );

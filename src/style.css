@@ -1,7 +1,7 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --color-primary: #8F6BE8;
+  --color-primary: #8f6be8;
   --font-primary: 'Lato', sans-serif;
   --color-background: #141414;
   --color-text: #f1f1f1;

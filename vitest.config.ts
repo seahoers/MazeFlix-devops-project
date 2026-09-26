@@ -12,6 +12,11 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       reporter: ['text', 'html', 'json', 'lcov'],
+      thresholds: {
+        statements: 89,
+        branches: 88,
+        functions: 68,
+      },
       exclude: [
         'node_modules/',
         'src/tests/',
