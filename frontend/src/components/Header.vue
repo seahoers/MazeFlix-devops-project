@@ -4,8 +4,10 @@ import SearchBar from './SearchBar.vue';
 import { useRouter } from 'vue-router';
 import Logo from '../assets/images/logo.png';
 import { useMobileDetection } from '../composables/useMobileDetection';
+import { useAuthStore } from '../stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const isScrolled = ref<boolean>(false);
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 const { isMobile } = useMobileDetection();
@@ -20,8 +22,18 @@ const redirectToCatalog = () => {
   searchBarRef.value?.clearSearch();
 };
 
+const handleSignOut = async () => {
+  try {
+    await authStore.signOut();
+    router.push('/');
+  } catch {
+    // surfaced via authStore.error
+  }
+};
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
+  authStore.fetchCurrentUser();
 });
 
 onUnmounted(() => {
@@ -50,7 +62,39 @@ onUnmounted(() => {
         <div v-else>
           <span @click="redirectToCatalog" class="text-xl font-bold">For you</span>
         </div>
-        <SearchBar ref="searchBarRef" />
+        <div class="flex items-center gap-4">
+          <SearchBar ref="searchBarRef" />
+          <nav class="flex items-center gap-3">
+            <template v-if="authStore.isAuthenticated">
+              <span class="hidden sm:inline text-sm text-gray-300">{{
+                authStore.user?.email
+              }}</span>
+              <p v-if="authStore.error" role="alert" class="hidden sm:inline text-sm text-red-400">
+                {{ authStore.error }}
+              </p>
+              <button
+                @click="handleSignOut"
+                class="text-sm px-3 py-1.5 rounded border border-gray-700 hover:border-primary transition-colors duration-200 cursor-pointer"
+              >
+                Sign out
+              </button>
+            </template>
+            <template v-else-if="authStore.initialized">
+              <router-link
+                to="/signin"
+                class="text-sm px-3 py-1.5 rounded border border-gray-700 hover:border-primary transition-colors duration-200"
+              >
+                Sign in
+              </router-link>
+              <router-link
+                to="/signup"
+                class="text-sm px-3 py-1.5 rounded bg-primary hover:opacity-90 transition-opacity duration-200"
+              >
+                Sign up
+              </router-link>
+            </template>
+          </nav>
+        </div>
       </div>
     </div>
   </header>

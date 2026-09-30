@@ -13,6 +13,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ShowDetailView.vue'),
     props: true,
   },
+  {
+    path: '/signin',
+    name: 'SignIn',
+    component: () => import('../views/SignInView.vue'),
+  },
+  {
+    path: '/signup',
+    name: 'SignUp',
+    component: () => import('../views/SignUpView.vue'),
+  },
 ];
 
 const router = createRouter({

@@ -13,31 +13,47 @@ https://github.com/user-attachments/assets/d2a3b78b-9d59-4541-9367-18a4059580f9
 
 ## 🚀 Getting Started
 
+The repo is a Bun workspace with two packages: [`frontend/`](frontend) (this
+Vue app) and [`backend/`](backend) (the Express + Postgres API it talks to
+for sign up / sign in).
+
 ### Prerequisites
 
-- Node.js 16+
-- pnpm (recommended) or npm
+- [Bun](https://bun.sh) 1.4+
+- A Postgres database for the backend (Terraform provisions one for the
+  deployed stack; for local development, run any Postgres 16 instance and
+  point `backend/.env` at it — see `backend/.env.example`)
 
-**Install dependencies:**
-   ```bash
-   pnpm install
-   # or
-   npm install
-   ```
-**Start the development server:**
-   ```bash
-   pnpm dev
-   # or
-   npm run dev
-   ```
+**Install dependencies (from the repo root):**
+```bash
+bun install
+```
+
+**Run the frontend:**
+```bash
+cd frontend && bun run dev
+```
+
+**Run the backend** (requires `DATABASE_URL` — copy `backend/.env.example` to
+`backend/.env` and adjust as needed):
+```bash
+cd backend && bun run dev
+```
+
 **Run tests:**
-   ```bash
-   pnpm test
-   # or
-   npm run test
-   ```
+```bash
+cd frontend && bun run test   # Vue components, stores, repositories
+cd backend && bun run test    # routes, against a real Postgres
+```
 
-  
+**Database migrations** (backend): schema changes are written as Drizzle
+migrations, generated from `backend/src/db/schema.ts`:
+```bash
+cd backend && bun run db:generate   # writes SQL under backend/drizzle/
+```
+Migrations are applied automatically when the backend starts (see
+`backend/src/index.ts`) — Terraform provisions the Postgres container itself,
+but does not run migrations.
 
 ## ✨ Features
 
@@ -48,11 +64,13 @@ https://github.com/user-attachments/assets/d2a3b78b-9d59-4541-9367-18a4059580f9
 - **Responsive Design:** Optimized for desktop and mobile
 - **Error Handling:** User-friendly error and empty states
 - **Modern UI:** Fixed, animated header; animated cards; smooth transitions
+- **Accounts:** Sign up / sign in with a session cookie, backed by the Express API
 
 ---
 
 ## 🛠️ Technical Stack
 
+**Frontend**
 - **Vue 3** (Composition API)
 - **TypeScript** (strict mode)
 - **Pinia** (state management)
@@ -61,6 +79,12 @@ https://github.com/user-attachments/assets/d2a3b78b-9d59-4541-9367-18a4059580f9
 - **Axios** (HTTP client)
 - **Vitest** (unit testing)
 - **@vue/test-utils** (component testing)
+
+**Backend**
+- **Express** (TypeScript, running on Bun)
+- **Drizzle ORM** (Postgres, SQL-first migrations)
+- **Bun's built-in `Bun.password`** (argon2id password hashing)
+- **`bun test`** (unit + route tests against a real Postgres)
 
 ---
 
@@ -102,6 +126,41 @@ I chose Pinia for centralized state management. All show data, search state, and
 
 ---
 
+### Server-Side Sessions for Auth
+
+**Context:**
+Sign up / sign in needed to store credentials ourselves (not delegate to an
+OAuth provider), and the deployed stack already runs two frontend containers
+and a Postgres instance behind a shared nginx load balancer.
+
+**Decision:**
+The backend hashes passwords with Bun's built-in `Bun.password` (argon2id —
+no native npm dependency to break the multi-arch Docker build) and issues an
+opaque, random session token on sign in, stored hashed (SHA-256) in a
+`sessions` table and set as an `httpOnly` cookie. This was chosen over JWTs
+specifically for **instant revocation**: signing out or invalidating a
+compromised session is a single row delete, rather than needing a
+server-side blocklist that would cancel out most of a JWT's statelessness
+benefit anyway. nginx proxies `/api/*` to the backend on the same origin, so
+the cookie can use `SameSite=Lax` without any CORS configuration.
+
+**Consequences:**
+- Every authenticated request costs a session lookup (a DB round trip), which
+  a stateless JWT wouldn't need — an acceptable trade for this app's scale.
+- The catalog itself stays fully public; auth only gates the account UI.
+
+---
+
 ## 📚 API
 
-This project uses the [TVMaze API](https://api.tvmaze.com) for all show data. No auth required.
+The frontend uses the [TVMaze API](https://api.tvmaze.com) for all show data (no auth required).
+
+The bundled `backend/` exposes its own API at `/api/auth`:
+
+| Endpoint            | Method | Description                          |
+| -------------------- | ------ | ------------------------------------- |
+| `/api/auth/signup`   | POST   | Create an account, sign in            |
+| `/api/auth/signin`   | POST   | Sign in with email + password         |
+| `/api/auth/signout`  | POST   | Invalidate the current session        |
+| `/api/auth/me`       | GET    | Current signed-in user (401 if none)  |
+| `/api/health`        | GET    | Liveness check                        |
