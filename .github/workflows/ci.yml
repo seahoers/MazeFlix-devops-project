@@ -11,9 +11,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  IMAGE_NAME: mazeflix-frontend
-
 jobs:
   verify:
     name: Verifications
@@ -22,8 +19,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [audit, format, lint, typecheck, test]
-        
+        include:
+          - check: audit
+          - workspace: frontend
+            check: format:check
+          - workspace: frontend
+            check: lint:ci
+          - workspace: frontend
+            check: typecheck:ci
+          - workspace: frontend
+            check: test:ci
+          - workspace: backend
+            check: format:check
+          - workspace: backend
+            check: lint:ci
+          - workspace: backend
+            check: typecheck:ci
+          - workspace: backend
+            check: test:ci
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -46,36 +60,43 @@ jobs:
         if: matrix.check != 'audit'
         run: bun install --frozen-lockfile
 
-      - name: Check formatting
-        if: matrix.check == 'format'
-        run: bun run format:check
+      - name: Start Postgres
+        if: matrix.workspace == 'backend' && matrix.check == 'test:ci'
+        run: |
+          docker run -d --name ci-postgres -p 5432:5432 \
+            -e POSTGRES_DB=mazeflix \
+            -e POSTGRES_USER=mazeflix \
+            -e POSTGRES_PASSWORD=mazeflix \
+            postgres:16-alpine
+          for i in $(seq 1 30); do
+            docker exec ci-postgres pg_isready -U mazeflix -d mazeflix && break
+            sleep 1
+          done
 
-      - name: Run linting
-        if: matrix.check == 'lint'
-        run: bun run lint:ci
-
-      - name: Run static type checking
-        if: matrix.check == 'typecheck'
-        run: bun run typecheck:ci
-
-      - name: Run tests with coverage
-        if: matrix.check == 'test'
-        run: bun run test:ci
+      - name: Run ${{ matrix.check }}
+        if: matrix.check != 'audit'
+        working-directory: ${{ matrix.workspace }}
+        env:
+          DATABASE_URL: postgresql://mazeflix:mazeflix@localhost:5432/mazeflix
+        run: bun run ${{ matrix.check }}
 
   build-and-push:
-    name: Build and Push Docker Image
+    name: Build and Push ${{ matrix.name }} Image
     needs: verify
     runs-on: ubuntu-latest
-    outputs:
-      sha_tag: ${{ steps.vars.outputs.sha_tag }}
+    strategy:
+      matrix:
+        include:
+          - name: frontend
+            image: mazeflix-frontend
+            dockerfile: frontend/Dockerfile
+          - name: backend
+            image: mazeflix-backend
+            dockerfile: backend/Dockerfile
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
-
-      - name: Set image tag output
-        id: vars
-        run: echo "sha_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -93,7 +114,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
@@ -103,6 +124,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.dockerfile }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -121,6 +143,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set image tag output
+        id: vars
+        run: echo "sha_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -135,6 +161,7 @@ jobs:
       - name: Terraform apply
         working-directory: terraform
         env:
-          TF_VAR_app_image_tag: ${{ needs.build-and-push.outputs.sha_tag }}
+          TF_VAR_app_image_tag: ${{ steps.vars.outputs.sha_tag }}
+          TF_VAR_backend_image_tag: ${{ steps.vars.outputs.sha_tag }}
           TF_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
         run: terraform apply -input=false -auto-approve
