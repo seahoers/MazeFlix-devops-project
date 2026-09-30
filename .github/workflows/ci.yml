@@ -136,4 +136,5 @@ jobs:
         working-directory: terraform
         env:
           TF_VAR_app_image_tag: ${{ needs.build-and-push.outputs.sha_tag }}
+          TF_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
         run: terraform apply -input=false -auto-approve
