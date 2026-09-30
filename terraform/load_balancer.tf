@@ -21,8 +21,16 @@ resource "docker_container" "nginx" {
     read_only      = true
   }
 
+  # nginx.conf is a host bind-mount, so Terraform can't see its content change
+  # on its own. This label forces the container to be recreated whenever the file changes.
+  labels {
+    label = "nginx-conf-hash"
+    value = filemd5("${path.module}/nginx/nginx.conf")
+  }
+
   depends_on = [
     docker_container.app1,
-    docker_container.app2
+    docker_container.app2,
+    docker_container.backend,
   ]
 }

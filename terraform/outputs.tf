@@ -8,6 +8,11 @@ output "app_image" {
   value       = docker_image.app.name
 }
 
+output "backend_image" {
+  description = "Docker Hub image used by the backend container"
+  value       = docker_image.backend.name
+}
+
 output "postgres_host" {
   description = "Hostname the backend can reach Postgres at, from within the Docker network"
   value       = "postgres"

@@ -16,6 +16,12 @@ variable "app_image_tag" {
   default     = "sha-76009ff"
 }
 
+variable "backend_image_tag" {
+  description = "Tag of the seahoers/mazeflix-backend image (from Docker Hub) to run"
+  type        = string
+  default     = "sha-c45cf74"
+}
+
 variable "postgres_db" {
   description = "Name of the database the backend's data is stored in"
   type        = string
