@@ -28,6 +28,14 @@ describe('auth routes', () => {
     expect(res.headers['set-cookie']?.[0]).toMatch(/mazeflix_session=/);
   });
 
+  it('rejects signup with an invalid payload', async () => {
+    const res = await request(app)
+      .post('/api/auth/signup')
+      .send({ email: 'not-an-email', password: 'short' });
+
+    expect(res.status).toBe(400);
+  });
+
   it('rejects signup with a duplicate email', async () => {
     await request(app).post('/api/auth/signup').send(credentials);
     const res = await request(app).post('/api/auth/signup').send(credentials);
@@ -41,6 +49,14 @@ describe('auth routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['set-cookie']?.[0]).toMatch(/mazeflix_session=/);
+  });
+
+  it('rejects signin with an invalid payload', async () => {
+    const res = await request(app)
+      .post('/api/auth/signin')
+      .send({ email: 'not-an-email', password: 'short' });
+
+    expect(res.status).toBe(401);
   });
 
   it('rejects signin with the wrong password', async () => {
@@ -62,6 +78,11 @@ describe('auth routes', () => {
 
     const unauthenticated = await request(app).get('/api/auth/me');
     expect(unauthenticated.status).toBe(401);
+  });
+
+  it('rejects an unrecognized session cookie', async () => {
+    const res = await request(app).get('/api/auth/me').set('Cookie', 'mazeflix_session=bogus');
+    expect(res.status).toBe(401);
   });
 
   it('signs out and invalidates the session', async () => {

@@ -20,7 +20,7 @@ const credentialsSchema = z.object({
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
 
-function isUniqueViolation(err: unknown): boolean {
+export function isUniqueViolation(err: unknown): boolean {
   return (
     typeof err === 'object' &&
     err !== null &&
