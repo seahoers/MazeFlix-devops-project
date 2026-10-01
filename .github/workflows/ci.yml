@@ -64,12 +64,12 @@ jobs:
         if: matrix.workspace == 'backend' && matrix.check == 'test:ci'
         run: |
           docker run -d --name ci-postgres -p 5432:5432 \
-            -e POSTGRES_DB=mazeflix \
+            -e POSTGRES_DB=mazeflix_test \
             -e POSTGRES_USER=mazeflix \
             -e POSTGRES_PASSWORD=mazeflix \
             postgres:16-alpine
           for i in $(seq 1 30); do
-            docker exec ci-postgres pg_isready -U mazeflix -d mazeflix && break
+            docker exec ci-postgres pg_isready -U mazeflix -d mazeflix_test && break
             sleep 1
           done
 
@@ -77,7 +77,7 @@ jobs:
         if: matrix.check != 'audit'
         working-directory: ${{ matrix.workspace }}
         env:
-          DATABASE_URL: postgresql://mazeflix:mazeflix@localhost:5432/mazeflix
+          DATABASE_URL: postgresql://mazeflix:mazeflix@localhost:5432/mazeflix_test
         run: bun run ${{ matrix.check }}
 
   build-and-push:
