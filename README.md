@@ -45,6 +45,9 @@ cd backend && bun run dev
 cd frontend && bun run test   # Vue components, stores, repositories
 cd backend && bun run test    # routes, against a real Postgres
 ```
+The backend's route tests truncate tables between tests, so they refuse to
+run unless `DATABASE_URL` points at a database whose name ends in `_test` —
+see `backend/.env.example` for how to set one up.
 
 **Database migrations** (backend): schema changes are written as Drizzle
 migrations, generated from `backend/src/db/schema.ts`:

@@ -6,6 +6,17 @@ import { runMigrations, waitForDatabase } from '../../src/db/migrate';
 
 beforeAll(async () => {
   await waitForDatabase(pool);
+
+  const { rows } = await pool.query<{ name: string }>('SELECT current_database() AS name');
+  const databaseName = rows[0]?.name ?? '';
+  if (!databaseName.endsWith('_test')) {
+    throw new Error(
+      `Refusing to run: DATABASE_URL points at "${databaseName}", not a disposable test ` +
+        'database. This suite truncates tables between tests — point DATABASE_URL at a ' +
+        'database whose name ends in "_test" before running it (see backend/.env.example).',
+    );
+  }
+
   await runMigrations(pool);
 });
 
