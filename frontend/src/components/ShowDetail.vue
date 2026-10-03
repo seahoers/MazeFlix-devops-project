@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Show } from '../types/tvmaze';
 import ShowBanner from './ShowBanner.vue';
+import WatchlistButton from './WatchlistButton.vue';
+import { useAuthStore } from '../stores/auth';
 
 interface Props {
   show: Show;
@@ -8,6 +10,8 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const authStore = useAuthStore();
 
 const stripHtml = (html: string | null): string => {
   if (!html) return '';
@@ -18,6 +22,12 @@ const stripHtml = (html: string | null): string => {
 <template>
   <article class="relative w-full">
     <ShowBanner :image="bannerImage" :show="show" />
+
+    <WatchlistButton
+      v-if="authStore.isAuthenticated"
+      :show-id="show.id"
+      class="absolute top-20 right-6 md:top-8 md:right-8 z-10"
+    />
 
     <section class="relative px-6 pb-16">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
