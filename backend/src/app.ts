@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth';
+import { watchlistRouter } from './routes/watchlist';
 import { errorHandler } from './middleware/error-handler';
 
 export const app = express();
@@ -14,5 +15,6 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/watchlist', watchlistRouter);
 
 app.use(errorHandler);
