@@ -5,9 +5,11 @@ import { useRouter } from 'vue-router';
 import Logo from '../assets/images/logo.png';
 import { useMobileDetection } from '../composables/useMobileDetection';
 import { useAuthStore } from '../stores/auth';
+import { useWatchlistStore } from '../stores/watchlist';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const watchlistStore = useWatchlistStore();
 const isScrolled = ref<boolean>(false);
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 const { isMobile } = useMobileDetection();
@@ -25,6 +27,7 @@ const redirectToCatalog = () => {
 const handleSignOut = async () => {
   try {
     await authStore.signOut();
+    watchlistStore.clear();
     router.push('/');
   } catch {
     // surfaced via authStore.error
@@ -33,7 +36,9 @@ const handleSignOut = async () => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
-  authStore.fetchCurrentUser();
+  if (!authStore.initialized) {
+    authStore.fetchCurrentUser();
+  }
 });
 
 onUnmounted(() => {
@@ -66,6 +71,12 @@ onUnmounted(() => {
           <SearchBar ref="searchBarRef" />
           <nav class="flex items-center gap-3">
             <template v-if="authStore.isAuthenticated">
+              <router-link
+                to="/watchlist"
+                class="text-sm px-3 py-1.5 rounded border border-gray-700 hover:border-primary transition-colors duration-200"
+              >
+                Watchlist
+              </router-link>
               <span class="hidden sm:inline text-sm text-gray-300">{{
                 authStore.user?.email
               }}</span>
