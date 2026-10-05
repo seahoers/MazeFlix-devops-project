@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -23,11 +24,35 @@ const routes: RouteRecordRaw[] = [
     name: 'SignUp',
     component: () => import('../views/SignUpView.vue'),
   },
+  {
+    path: '/watchlist',
+    name: 'Watchlist',
+    component: () => import('../views/WatchlistView.vue'),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach(async (to) => {
+  if (!to.meta.requiresAuth) return true;
+
+  const authStore = useAuthStore();
+  if (!authStore.initialized) {
+    await authStore.fetchCurrentUser();
+  }
+
+  if (authStore.isAuthenticated) return true;
+
+  // authStore.error means the check itself failed (network blip, 500, …) rather than confirming
+  // the visitor is signed out — let the page through instead of bouncing a possibly-signed-in
+  // user to SignIn.
+  if (authStore.error) return true;
+
+  return { name: 'SignIn' };
 });
 
 export default router;

@@ -2,9 +2,11 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useWatchlistStore } from '../stores/watchlist';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const watchlistStore = useWatchlistStore();
 
 const email = ref('');
 const password = ref('');
@@ -12,6 +14,8 @@ const password = ref('');
 const handleSubmit = async () => {
   try {
     await authStore.signUp({ email: email.value, password: password.value });
+    // A previous user's watchlist may still be cached if they signed up again without signing out.
+    watchlistStore.clear();
     router.push('/');
   } catch {
     // surfaced via authStore.error

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { HttpClient } from '../services/http-client';
+import { extractErrorMessage } from '../services/http-errors';
 import type { Credentials, User } from '../types/auth';
 
 export interface IAuthRepository {
@@ -7,14 +8,6 @@ export interface IAuthRepository {
   signIn(credentials: Credentials): Promise<User>;
   signOut(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
-}
-
-function extractMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    const message = (err.response?.data as { message?: string } | undefined)?.message;
-    if (message) return message;
-  }
-  return fallback;
 }
 
 export class AuthRepository implements IAuthRepository {
@@ -28,7 +21,7 @@ export class AuthRepository implements IAuthRepository {
     try {
       return await this.httpClient.post<User>('/auth/signup', credentials);
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to sign up'));
+      throw new Error(extractErrorMessage(err, 'Failed to sign up'));
     }
   }
 
@@ -36,7 +29,7 @@ export class AuthRepository implements IAuthRepository {
     try {
       return await this.httpClient.post<User>('/auth/signin', credentials);
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to sign in'));
+      throw new Error(extractErrorMessage(err, 'Failed to sign in'));
     }
   }
 
@@ -44,7 +37,7 @@ export class AuthRepository implements IAuthRepository {
     try {
       await this.httpClient.post<void>('/auth/signout');
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to sign out'));
+      throw new Error(extractErrorMessage(err, 'Failed to sign out'));
     }
   }
 
@@ -55,7 +48,7 @@ export class AuthRepository implements IAuthRepository {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         return null;
       }
-      throw new Error(extractMessage(err, 'Failed to load current user'));
+      throw new Error(extractErrorMessage(err, 'Failed to load current user'));
     }
   }
 }

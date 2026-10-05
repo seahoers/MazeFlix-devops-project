@@ -1,32 +1,9 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import request from 'supertest';
 import { app } from '../../src/app';
-import { pool } from '../../src/db/client';
-import { runMigrations, waitForDatabase } from '../../src/db/migrate';
+import { resetTestDatabase } from '../support/database';
 
-beforeAll(async () => {
-  await waitForDatabase(pool);
-
-  const { rows } = await pool.query<{ name: string }>('SELECT current_database() AS name');
-  const databaseName = rows[0]?.name ?? '';
-  if (!databaseName.endsWith('_test')) {
-    throw new Error(
-      `Refusing to run: DATABASE_URL points at "${databaseName}", not a disposable test ` +
-        'database. This suite truncates tables between tests — point DATABASE_URL at a ' +
-        'database whose name ends in "_test" before running it (see backend/.env.example).',
-    );
-  }
-
-  await runMigrations(pool);
-});
-
-beforeEach(async () => {
-  await pool.query('TRUNCATE TABLE sessions, users RESTART IDENTITY CASCADE');
-});
-
-afterAll(async () => {
-  await pool.end();
-});
+beforeEach(resetTestDatabase);
 
 describe('auth routes', () => {
   const credentials = { email: 'Test@Example.com', password: 'correct-horse-battery' };

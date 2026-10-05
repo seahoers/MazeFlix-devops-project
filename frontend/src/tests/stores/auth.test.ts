@@ -114,15 +114,28 @@ describe('useAuthStore', () => {
       expect(store.initialized).toBe(true);
     });
 
-    it('clears the user and marks initialized on failure', async () => {
-      (mockAuthRepository.getCurrentUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('network down'),
-      );
+    it('sets the user to null and marks initialized on a confirmed 401', async () => {
+      (mockAuthRepository.getCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       const store = useAuthStore();
       await store.fetchCurrentUser();
 
       expect(store.user).toBeNull();
+      expect(store.error).toBeNull();
+      expect(store.initialized).toBe(true);
+    });
+
+    it('keeps the previous user and sets an error on an unrelated failure', async () => {
+      const store = useAuthStore();
+      store.user = { id: '1', email: 'a@b.com' };
+      (mockAuthRepository.getCurrentUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('network down'),
+      );
+
+      await store.fetchCurrentUser();
+
+      expect(store.user).toEqual({ id: '1', email: 'a@b.com' });
+      expect(store.error).toBe('network down');
       expect(store.initialized).toBe(true);
     });
   });

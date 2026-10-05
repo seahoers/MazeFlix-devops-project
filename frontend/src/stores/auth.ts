@@ -71,10 +71,14 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchCurrentUser() {
+      // authRepository.getCurrentUser() only resolves to null for a confirmed 401 (no session);
+      // it throws for anything else (timeout, 500, …). Only the confirmed case should clear an
+      // existing `user`, otherwise a transient failure would wrongly sign out an active session.
       try {
         this.user = await authRepository.getCurrentUser();
-      } catch {
-        this.user = null;
+        this.error = null;
+      } catch (err) {
+        this.error = err instanceof Error ? err.message : 'Failed to load current user';
       } finally {
         this.initialized = true;
       }
