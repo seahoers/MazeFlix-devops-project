@@ -1,28 +1,68 @@
-# MazeFlix - TV Show Dashboard
+_This repo contains the final deliverable of our [Project Proposal](https://github.com/KTH/devops-course/pull/3002) where a DevOps pipline is developed "on top" of an existing project._
 
-A Vue 3 application for browsing TV shows, genre-based carousels, debounced search, and detailed show information. Built with TypeScript, Pinia, Tailwind CSS, and Vitest.
+<br>
 
-**Link:**
-https://chipper-baklava-ea44a4.netlify.app/
+**This README consists of two parts:**
+- Part 1: ["DevOps Project"](#devops-project)<br>Instructions and documentation regarding what has been built "on top" of the initial project.<br><br>
+- Part 2: ["MazeFlix - TV Show Dashboard"](#mazeflix---tv-show-dashboard)<br>Kept as a reference, the README from the initial project's repository.
 
-**Example:**
+<br>
+<br>
+<br>
 
-https://github.com/user-attachments/assets/d2a3b78b-9d59-4541-9367-18a4059580f9
-
----
+# DevOps Project
 
 ## 🚀 Getting Started
 
-The repo is a Bun workspace with two packages: [`frontend/`](frontend) (this
-Vue app) and [`backend/`](backend) (the Express + Postgres API it talks to
+The repo is a Bun workspace with two packages: [`frontend/`](frontend) (the initial project's Vue app) and [`backend/`](backend) (the Express + Postgres API it talks to
 for sign up / sign in).
 
-### Prerequisites
+---
 
+### Instructions: For running the DevOps pipeline
+
+
+#### **Prerequisites**
+- [Docker](https://docker.com) installed and running.
+
+<br>
+
+#### **Setup**
+- **Step 1:** Fork this repository
+- **Step 2:** Add Repository secrets<br>_(Settings > Secrets and variables > Actions)_
+  - `DOCKERHUB_USERNAME`
+  - `DOCKERHUB_TOKEN`
+  - `POSTGRES_PASSWORD` (any non-empty, URL-safe string)
+- **Step 3:** Set up GitHub self-hosted runner<br>_(Settings > Actions > Runners > "New self-hosted runner")_
+  - Follow the provided steps to install and set up.
+  - To run it, do .
+
+<br>
+
+#### **Test it out!**
+Make sure that:
+- **GitHub self-hosted runner is running**<br>(`./run.sh` inside runner's root folder).
+- **Docker daemon is running**
+
+<br>
+
+To intitiate the pipeline, you can push a change to the repo. However, the easiest way is to just run the workflow manually from: **Actions** (main menu) > `CI` > 'Run workflow'. This will run the pipeline from start to finish and deploy it to the machine where the runner is set up.
+
+<br>
+
+---
+
+<br>
+
+### Instructions: For local development
+
+**Prerequisites:**
+- [Docker](https://docker.com) installed and running.
 - [Bun](https://bun.sh) 1.4+
-- A Postgres database for the backend (Terraform provisions one for the
-  deployed stack; for local development, run any Postgres 16 instance and
-  point `backend/.env` at it — see `backend/.env.example`)
+- [Node.js](https://nodejs.org/) 20.19+ or 22.12+
+- A Postgres database for the backend (Terraform provisions one for the deployed stack. For local development, run any Postgres 16 instance and point `backend/.env` at it — see `backend/.env.example`)
+
+<br>
 
 **Install dependencies (from the repo root):**
 ```bash
@@ -58,6 +98,97 @@ Migrations are applied automatically when the backend starts (see
 `backend/src/index.ts`) — Terraform provisions the Postgres container itself,
 but does not run migrations.
 
+## 🛠️ Technical Stack
+
+**Backend**
+- **Express** (TypeScript, running on Bun)
+- **Drizzle ORM** (Postgres, SQL-first migrations)
+- **Bun's built-in `Bun.password`** (argon2id password hashing)
+- **`bun test`** (unit + route tests against a real Postgres)
+
+
+---
+
+### Server-Side Sessions for Auth
+
+**Context:**
+Sign up / sign in needed to store credentials ourselves (not delegate to an
+OAuth provider), and the deployed stack already runs two frontend containers
+and a Postgres instance behind a shared nginx load balancer.
+
+**Decision:**
+The backend hashes passwords with Bun's built-in `Bun.password` (argon2id, no native npm dependency to break the multi-arch Docker build) and issues an opaque, random session token on sign in, stored hashed (SHA-256) in a `sessions` table and set as an `httpOnly` cookie. This was chosen over JWTs specifically for **instant revocation**: signing out or invalidating a compromised session is a single row delete, rather than needing a
+server-side blocklist that would cancel out most of a JWT's statelessness benefit anyway. nginx proxies `/api/*` to the backend on the same origin, so the cookie can use `SameSite=Lax` without any CORS configuration.
+
+**Consequences:**
+- Every authenticated request costs a session lookup (a DB round trip), which
+  a stateless JWT wouldn't need — an acceptable trade for this app's scale.
+- The catalog itself stays fully public; auth only gates the account UI.
+
+---
+
+## 📚 API
+
+The bundled `backend/` exposes its own API at `/api/auth`:
+
+| Endpoint            | Method | Description                          |
+| -------------------- | ------ | ------------------------------------- |
+| `/api/auth/signup`   | POST   | Create an account, sign in            |
+| `/api/auth/signin`   | POST   | Sign in with email + password         |
+| `/api/auth/signout`  | POST   | Invalidate the current session        |
+| `/api/auth/me`       | GET    | Current signed-in user (401 if none)  |
+| `/api/health`        | GET    | Liveness check                        |
+
+
+<br>
+<br>
+<br>
+
+# MazeFlix - TV Show Dashboard
+
+_README from [original repository](https://github.com/annerland/MazeFlix/tree/main)._
+
+<br>
+
+A Vue 3 application for browsing TV shows, genre-based carousels, debounced search, and detailed show information. Built with TypeScript, Pinia, Tailwind CSS, and Vitest.
+
+**Link:**
+https://chipper-baklava-ea44a4.netlify.app/
+
+**Example:**
+
+https://github.com/user-attachments/assets/d2a3b78b-9d59-4541-9367-18a4059580f9
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 20.19+ or 22.12+
+- pnpm (recommended) or npm
+
+**Install dependencies:**
+   ```bash
+   pnpm install
+   # or
+   npm install
+   ```
+**Start the development server:**
+   ```bash
+   pnpm dev
+   # or
+   npm run dev
+   ```
+**Run tests:**
+   ```bash
+   pnpm test
+   # or
+   npm run test
+   ```
+
+  
+
 ## ✨ Features
 
 - **Dashboard:** Horizontal, animated carousels organized by genre
@@ -67,13 +198,11 @@ but does not run migrations.
 - **Responsive Design:** Optimized for desktop and mobile
 - **Error Handling:** User-friendly error and empty states
 - **Modern UI:** Fixed, animated header; animated cards; smooth transitions
-- **Accounts:** Sign up / sign in with a session cookie, backed by the Express API
 
 ---
 
 ## 🛠️ Technical Stack
 
-**Frontend**
 - **Vue 3** (Composition API)
 - **TypeScript** (strict mode)
 - **Pinia** (state management)
@@ -82,12 +211,6 @@ but does not run migrations.
 - **Axios** (HTTP client)
 - **Vitest** (unit testing)
 - **@vue/test-utils** (component testing)
-
-**Backend**
-- **Express** (TypeScript, running on Bun)
-- **Drizzle ORM** (Postgres, SQL-first migrations)
-- **Bun's built-in `Bun.password`** (argon2id password hashing)
-- **`bun test`** (unit + route tests against a real Postgres)
 
 ---
 
@@ -129,41 +252,6 @@ I chose Pinia for centralized state management. All show data, search state, and
 
 ---
 
-### Server-Side Sessions for Auth
-
-**Context:**
-Sign up / sign in needed to store credentials ourselves (not delegate to an
-OAuth provider), and the deployed stack already runs two frontend containers
-and a Postgres instance behind a shared nginx load balancer.
-
-**Decision:**
-The backend hashes passwords with Bun's built-in `Bun.password` (argon2id —
-no native npm dependency to break the multi-arch Docker build) and issues an
-opaque, random session token on sign in, stored hashed (SHA-256) in a
-`sessions` table and set as an `httpOnly` cookie. This was chosen over JWTs
-specifically for **instant revocation**: signing out or invalidating a
-compromised session is a single row delete, rather than needing a
-server-side blocklist that would cancel out most of a JWT's statelessness
-benefit anyway. nginx proxies `/api/*` to the backend on the same origin, so
-the cookie can use `SameSite=Lax` without any CORS configuration.
-
-**Consequences:**
-- Every authenticated request costs a session lookup (a DB round trip), which
-  a stateless JWT wouldn't need — an acceptable trade for this app's scale.
-- The catalog itself stays fully public; auth only gates the account UI.
-
----
-
 ## 📚 API
 
-The frontend uses the [TVMaze API](https://api.tvmaze.com) for all show data (no auth required).
-
-The bundled `backend/` exposes its own API at `/api/auth`:
-
-| Endpoint            | Method | Description                          |
-| -------------------- | ------ | ------------------------------------- |
-| `/api/auth/signup`   | POST   | Create an account, sign in            |
-| `/api/auth/signin`   | POST   | Sign in with email + password         |
-| `/api/auth/signout`  | POST   | Invalidate the current session        |
-| `/api/auth/me`       | GET    | Current signed-in user (401 if none)  |
-| `/api/health`        | GET    | Liveness check                        |
+This project uses the [TVMaze API](https://api.tvmaze.com) for all show data. No auth required.
