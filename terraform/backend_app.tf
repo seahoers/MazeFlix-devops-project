@@ -26,5 +26,8 @@ resource "docker_container" "backend" {
     retries  = 5
   }
 
+  wait         = true
+  wait_timeout = 60
+
   depends_on = [docker_container.postgres]
 }

@@ -41,4 +41,7 @@ resource "docker_container" "postgres" {
     timeout  = "3s"
     retries  = 5
   }
+
+  wait         = true
+  wait_timeout = 60
 }
