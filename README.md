@@ -129,15 +129,24 @@ server-side blocklist that would cancel out most of a JWT's statelessness benefi
 
 ## 📚 API
 
-The bundled `backend/` exposes its own API at `/api/auth`:
+The bundled `backend/` exposes its own API under `/api`:
 
-| Endpoint            | Method | Description                          |
-| -------------------- | ------ | ------------------------------------- |
-| `/api/auth/signup`   | POST   | Create an account, sign in            |
-| `/api/auth/signin`   | POST   | Sign in with email + password         |
-| `/api/auth/signout`  | POST   | Invalidate the current session        |
-| `/api/auth/me`       | GET    | Current signed-in user (401 if none)  |
-| `/api/health`        | GET    | Liveness check                        |
+| Endpoint                   | Method | Description                               |
+| -------------------------- | ------ | ----------------------------------------- |
+| `/api/auth/signup`         | POST   | Create an account, sign in                |
+| `/api/auth/signin`         | POST   | Sign in with email + password             |
+| `/api/auth/signout`        | POST   | Invalidate the current session            |
+| `/api/auth/me`             | GET    | Current signed-in user (401 if none)      |
+| `/api/watchlist`           | GET    | List the signed-in user's show IDs        |
+| `/api/watchlist`           | POST   | Add a show with `{ "showId": 42 }`        |
+| `/api/watchlist/:showId`   | DELETE | Remove a show by its ID                   |
+| `/api/health`              | GET    | Liveness check                            |
+
+All watchlist endpoints require a signed-in session (otherwise they return 401).
+`GET /api/watchlist` returns an array of show IDs in the order they were added.
+`POST /api/watchlist` returns 201 with the added `showId`; adding the same show
+again does not create a duplicate. `DELETE /api/watchlist/:showId` returns 204,
+including when the show was not in the watchlist. Invalid show IDs return 400.
 
 
 <br>
