@@ -80,27 +80,6 @@ jobs:
           DATABASE_URL: postgresql://mazeflix:mazeflix@localhost:5432/mazeflix_test
         run: bun run ${{ matrix.check }}
 
-  terraform-test:
-    name: Terraform Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "~> 1.6"
-
-      - name: Terraform init
-        working-directory: terraform
-        run: terraform init -input=false
-
-      - name: Terraform test
-        working-directory: terraform
-        run: terraform test
-
   build-and-push:
     name: Build and Push ${{ matrix.name }} Image
     needs: verify
@@ -152,6 +131,35 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  terraform-test:
+    name: Terraform Test
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set image tag output
+        id: vars
+        run: echo "sha_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform test
+        working-directory: terraform
+        env:
+          TF_VAR_app_image_tag: ${{ steps.vars.outputs.sha_tag }}
+          TF_VAR_backend_image_tag: ${{ steps.vars.outputs.sha_tag }}
+        run: terraform test
 
   terraform-apply:
     needs: [build-and-push, terraform-test]
