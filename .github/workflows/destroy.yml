@@ -1,0 +1,33 @@
+name: Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to tear down all Terraform-managed resources'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    if: inputs.confirm == 'destroy' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: production
+    concurrency:
+      group: terraform-apply
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Terraform init
+        uses: ./.github/actions/terraform-init
+
+      - name: Terraform destroy
+        working-directory: terraform
+        env:
+          TF_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
+        run: terraform destroy -input=false -auto-approve

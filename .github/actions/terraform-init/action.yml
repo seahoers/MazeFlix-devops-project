@@ -1,0 +1,17 @@
+name: Terraform init (local runner)
+description: Set up Terraform and initialise it against the self-hosted runner's local state file
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "~> 1.6"
+
+    - name: Terraform init
+      shell: bash
+      working-directory: terraform
+      run: |
+        mkdir -p "$HOME/.terraform-state/mazeflix-devops-project"
+        terraform init -input=false -backend-config="path=$HOME/.terraform-state/mazeflix-devops-project/terraform.tfstate"

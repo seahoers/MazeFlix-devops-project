@@ -176,16 +176,8 @@ jobs:
         id: vars
         run: echo "sha_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "~> 1.6"
-
       - name: Terraform init
-        working-directory: terraform
-        run: |
-          mkdir -p "$HOME/.terraform-state/mazeflix-devops-project"
-          terraform init -input=false -backend-config="path=$HOME/.terraform-state/mazeflix-devops-project/terraform.tfstate"
+        uses: ./.github/actions/terraform-init
 
       - name: Terraform apply
         working-directory: terraform
