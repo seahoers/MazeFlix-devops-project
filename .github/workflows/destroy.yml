@@ -1,0 +1,39 @@
+name: Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to tear down all Terraform-managed resources'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    if: inputs.confirm == 'destroy' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: production
+    concurrency:
+      group: terraform-apply
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set image tag output
+        id: vars
+        run: echo "sha_tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Terraform init
+        uses: ./.github/actions/terraform-init
+
+      - name: Terraform destroy
+        working-directory: terraform
+        env:
+          TF_VAR_app_image_tag: ${{ steps.vars.outputs.sha_tag }}
+          TF_VAR_backend_image_tag: ${{ steps.vars.outputs.sha_tag }}
+          TF_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
+        run: terraform destroy -input=false -auto-approve
