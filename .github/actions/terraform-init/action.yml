@@ -1,4 +1,4 @@
-name: Terraform init
+name: Terraform init (local runner)
 description: Set up Terraform and initialise it against the self-hosted runner's local state file
 
 runs:
