@@ -35,7 +35,6 @@ for sign up / sign in).
   - `POSTGRES_PASSWORD` (any non-empty, URL-safe string)
 - **Step 3:** Set up GitHub self-hosted runner<br>_(Settings > Actions > Runners > "New self-hosted runner")_
   - Follow the provided steps to install and set up.
-  - To run it, do .
 
 <br>
 
