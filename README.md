@@ -24,19 +24,23 @@ for sign up / sign in).
 
 #### **Prerequisites**
 - [Docker](https://docker.com) installed and running.
+- [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) installed.
 
 <br>
 
 #### **Setup**
 - **Step 1:** Fork this repository
 - **Step 2:** Add Repository secrets<br>_(Settings > Secrets and variables > Actions)_
-  - `DOCKERHUB_USERNAME`
-  - `DOCKERHUB_TOKEN`
+  - `DOCKERHUB_USERNAME` (username of the person hosting the repositories for the backend and frontend images)
+  - `DOCKERHUB_TOKEN` (token with scope "Repo Read & Write" of the person hosting the repositories for the backend and frontend images)
   - `POSTGRES_PASSWORD` (any non-empty, URL-safe string)
 - **Step 3:** Set up GitHub self-hosted runner<br>_(Settings > Actions > Runners > "New self-hosted runner")_
   - Follow the provided steps to install and set up.
-  - To run it, do .
-
+- **Step 4:** Set up Github environment<br>_(Settings > Environments > Runners > "New environment")_
+  - The "terraform-destroy" job specifies: ```environment: production```. This is to allow for an approval process. So, if you want to enforce approval you must name the environment "production" or update the [workflow](.github/workflows/destroy.yml).
+  - Check "Required reviewer"
+  - Add those you would like to allow to approve the running of this job
+  - Check "Prevent self-review" if those people should not be able to approve a run they have triggered.
 <br>
 
 #### **Test it out!**
@@ -46,7 +50,7 @@ Make sure that:
 
 <br>
 
-To intitiate the pipeline, you can push a change to the repo. However, the easiest way is to just run the workflow manually from: **Actions** (main menu) > `CI` > 'Run workflow'. This will run the pipeline from start to finish and deploy it to the machine where the runner is set up.
+To intitiate the pipeline, you can push a change to the repo. However, the easiest way is to just run the workflow manually from: **Actions** (main menu) > `CI` > 'Run workflow'. This will run the pipeline from start to finish and deploy it to the machine where the runner is set up. Note that the deployment job "terraform-apply" only runs on the main branch. The same goes for the job "terraform-destroy".
 
 <br>
 
